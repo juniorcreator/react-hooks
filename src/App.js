@@ -1,26 +1,69 @@
-import React, { Component } from 'react'
-import TodoList from './TodoList'
+import React, { useState, useEffect } from "react";
+import { Context } from "./Context";
+import TodoList from "./TodoList";
 
-export default class App extends Component {
-  state = {
-    todos: [
-      {id: 1, title: 'First todo', completed: false},
-      {id: 2, title: 'Second todo', completed: true},
-    ]
-  }
+export default function App() {
+  let [todos, setTodos] = useState([]);
+  let [todoTitle, setTodoTitle] = useState("");
+  let handleClick = () => console.log("clicked");
 
-  render() {
-    return (
-      <div className="container">
-        <h1>Todo app</h1>
+  useEffect(() => {
+    let items = localStorage.getItem("todos") || [];
+    setTodos(items.length > 0 ? JSON.parse(items) : []);
+  }, []);
 
-          <div className="input-field">
-            <input type="text" />
-            <label>Todo name</label>
-          </div>
+  useEffect(() => {
+    document.addEventListener("click", handleClick);
+    localStorage.setItem("todos", JSON.stringify(todos));
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, [todos]);
 
-          <TodoList todos={this.state.todos} />
-      </div>
+  let addToto = event => {
+    if (event.key === "Enter") {
+      console.log("clicked enter");
+      setTodos([
+        ...todos,
+        {
+          id: Date.now(),
+          title: todoTitle,
+          completed: false
+        }
+      ]);
+      setTodoTitle("");
+    }
+  };
+  let rmTodo = id => {
+    setTodos(todos.filter(item => item.id !== id));
+  };
+  let toggleTodo = id => {
+    console.log("toggleTodo");
+    setTodos(
+      todos.map(item => {
+        if (item.id === id) {
+          item.completed = !item.completed;
+        }
+        return item;
+      })
     );
-  }
+  };
+
+  return (
+    <Context.Provider value={{ rmTodo, toggleTodo }}>
+      <div className="container">
+        <h1>Todo hooks, use localstorage</h1>
+        <div className="input-field">
+          <input
+            type="text"
+            onChange={event => setTodoTitle(event.target.value)}
+            onKeyPress={addToto}
+            value={todoTitle}
+          />
+          <label>Todo name</label>
+        </div>
+        <TodoList todos={todos} />
+      </div>
+    </Context.Provider>
+  );
 }
